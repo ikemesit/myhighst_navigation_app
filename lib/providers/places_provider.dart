@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import 'package:myhighst_map_app_v2/utils/get_api_key.dart';
 import '../models/place.dart';
 
 final placesProvider = StateNotifierProvider<PlacesNotifier, PlacesState>((
@@ -25,11 +26,17 @@ class PlacesState {
 }
 
 class PlacesNotifier extends StateNotifier<PlacesState> {
-  PlacesNotifier() : super(PlacesState());
-
   final Dio _dio = Dio();
-  static const String _apiKey =
-      'YOUR_GOOGLE_PLACES_API_KEY'; // Replace with your API key
+  static String _apiKey = '';
+
+  PlacesNotifier() : super(PlacesState()) {
+    _init();
+  }
+
+  // TODO test if this implementation wworks correctly
+  Future<void> _init() async {
+    _apiKey = await getApiKey();
+  }
 
   Future<void> searchPlaces(String query, {double? lat, double? lng}) async {
     if (query.isEmpty) {

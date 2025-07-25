@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.example.myhighst_map_app_v2"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 34 //flutter.compileSdkVersion
    // ndkVersion = flutter.ndkVersion
     ndkVersion = "27.0.12077973"
 
@@ -27,7 +27,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 34 //flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -43,4 +43,11 @@ android {
 
 flutter {
     source = "../.."
+}
+
+secrets {
+    defaultPropertiesFileName = "local.defaults.properties"
+    propertiesFileName = "secrets.properties"
+    defaultPropertiesFilePath = "android/local.defaults.properties"
+    propertiesFilePath = "android/secrets.properties"
 }
