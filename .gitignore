@@ -43,3 +43,41 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Generated files and directories
+.dart_tool/
+.flutter-plugins/
+.flutter-plugins-dependencies/
+.packages
+.idea/
+.vscode/
+build/
+*.iml
+*.lock
+*.log
+*.pyc
+*.swp
+.DS_Store
+
+# Platform-specific build files
+android/app/build/
+ios/Runner.xcworkspace/xcuserdata/
+ios/Flutter/Generated.xcconfig
+ios/Pods/
+ios/.symlinks/
+ios/DerivedData/
+windows/build/
+linux/build/
+macos/build/
+web/build/
+
+# IDE-specific files
+*.iml
+*.ipr
+*.iws
+
+# Sensitive files (e.g., API keys, credentials)
+# Consider using environment variables or a separate configuration file for these
+# instead of ignoring them if they are essential for the application to run.
+# For example:
+# lib/config.dart
