@@ -1,6 +1,9 @@
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/legacy.dart';
+import 'package:google_navigation_flutter/google_navigation_flutter.dart';
 import '../models/navigation_route.dart';
+import '../models/place.dart';
 
 final navigationProvider =
     StateNotifierProvider<NavigationNotifier, NavigationState>((ref) {
@@ -12,12 +15,16 @@ class NavigationState {
   final bool isLoading;
   final String? error;
   final bool isNavigating;
+  final NavigationWaypoint? destination;
+  final List<NavigationWaypoint> waypoints;
 
   NavigationState({
     this.route,
     this.isLoading = false,
     this.error,
     this.isNavigating = false,
+    this.destination,
+    this.waypoints = const [],
   });
 
   NavigationState copyWith({
@@ -25,12 +32,16 @@ class NavigationState {
     bool? isLoading,
     String? error,
     bool? isNavigating,
+    NavigationWaypoint? destination,
+    List<NavigationWaypoint>? waypoints,
   }) {
     return NavigationState(
       route: route ?? this.route,
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
       isNavigating: isNavigating ?? this.isNavigating,
+      destination: destination ?? this.destination,
+      waypoints: waypoints ?? this.waypoints,
     );
   }
 }
@@ -38,81 +49,96 @@ class NavigationState {
 class NavigationNotifier extends StateNotifier<NavigationState> {
   NavigationNotifier() : super(NavigationState());
 
-  final Dio _dio = Dio();
-  static const String _mapboxToken =
-      'YOUR_MAPBOX_ACCESS_TOKEN'; // Replace with your token
-
-  Future<void> getRoute(RPosition start, RPosition end) async {
+  Future<void> setDestination(Place place) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final String url =
-          'https://api.mapbox.com/directions/v5/mapbox/driving/${start.longitude},${start.latitude};${end.longitude},${end.latitude}';
+      final waypoint = place.toWaypoint();
+      final waypoints = [waypoint];
 
-      final response = await _dio.get(
-        url,
-        queryParameters: {
-          'access_token': _mapboxToken,
-          'geometries': 'geojson',
-          'steps': 'true',
-          'voice_instructions': 'true',
-        },
+      // Create a basic navigation route
+      final navigationRoute = NavigationRoute(
+        polylinePoints: [], // Will be populated by Google Navigation
+        duration: 'Ready', // Will be updated by navigation events
+        distance: 'Ready', // Will be updated by navigation events
+        steps: [], // Will be populated by Google Navigation
+        destination: waypoint,
       );
 
-      if (response.data['routes'].isNotEmpty) {
-        final route = response.data['routes'][0];
-        final geometry = route['geometry'];
-        final legs = route['legs'][0];
-
-        // Decode polyline points
-        final List<RPosition> polylinePoints = _decodePolyline(
-          geometry['coordinates'],
-        );
-
-        // Extract steps
-        final List<NavigationStep> steps = (legs['steps'] as List)
-            .map(
-              (step) => NavigationStep(
-                instruction: step['maneuver']['instruction'] ?? '',
-                distance: '${(step['distance'] / 1000).toStringAsFixed(1)} km',
-                duration: '${(step['duration'] / 60).toStringAsFixed(0)} min',
-                startLocation: RPosition(
-                  step['maneuver']['location'][1],
-                  step['maneuver']['location'][0],
-                ),
-                endLocation: RPosition(
-                  step['geometry']['coordinates'].last[1],
-                  step['geometry']['coordinates'].last[0],
-                ),
-              ),
-            )
-            .toList();
-
-        final navigationRoute = NavigationRoute(
-          polylinePoints: polylinePoints,
-          duration: '${(route['duration'] / 60).toStringAsFixed(0)} min',
-          distance: '${(route['distance'] / 1000).toStringAsFixed(1)} km',
-          steps: steps,
-        );
-
-        state = state.copyWith(route: navigationRoute, isLoading: false);
-      } else {
-        throw Exception('No routes found');
-      }
+      state = state.copyWith(
+        route: navigationRoute,
+        destination: waypoint,
+        waypoints: waypoints,
+        isLoading: false,
+      );
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false);
     }
   }
 
-  List<RPosition> _decodePolyline(List<dynamic> coordinates) {
-    return coordinates.map((coord) => RPosition(coord[1], coord[0])).toList();
+  Future<void> startNavigation() async {
+    if (state.waypoints.isEmpty) return;
+
+    try {
+      state = state.copyWith(isLoading: true);
+
+      // Set destinations and start navigation
+      await GoogleMapsNavigator.setDestinations(
+        Destinations(
+          waypoints: state.waypoints,
+          displayOptions: NavigationDisplayOptions(
+            showDestinationMarkers: true,
+            showTrafficLights: true,
+          ),
+        ),
+      );
+
+      await GoogleMapsNavigator.startGuidance();
+
+      state = state.copyWith(isNavigating: true, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(error: e.toString(), isLoading: false);
+    }
   }
 
-  void startNavigation() {
-    state = state.copyWith(isNavigating: true);
+  Future<void> stopNavigation() async {
+    try {
+      await GoogleMapsNavigator.stopGuidance();
+      state = state.copyWith(
+        isNavigating: false,
+        route: null,
+        destination: null,
+        waypoints: [],
+      );
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
   }
 
-  void stopNavigation() {
-    state = state.copyWith(isNavigating: false, route: null);
+  Future<void> simulateNavigation() async {
+    if (state.waypoints.isEmpty) return;
+
+    try {
+      state = state.copyWith(isLoading: true);
+
+      // Set destinations with simulation options
+      await GoogleMapsNavigator.setDestinations(
+        Destinations(
+          waypoints: state.waypoints,
+          displayOptions: NavigationDisplayOptions(
+            showDestinationMarkers: true,
+            showTrafficLights: true,
+          ),
+          routingOptions: RoutingOptions(
+            travelMode: NavigationTravelMode.driving,
+          ),
+        ),
+      );
+      await GoogleMapsNavigator.startGuidance();
+
+      state = state.copyWith(isNavigating: true, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(error: e.toString(), isLoading: false);
+    }
   }
 }

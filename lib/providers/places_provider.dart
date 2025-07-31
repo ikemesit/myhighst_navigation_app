@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:myhighst_map_app_v2/utils/get_api_key.dart';
 import '../models/place.dart';
 
@@ -26,17 +27,19 @@ class PlacesState {
 }
 
 class PlacesNotifier extends StateNotifier<PlacesState> {
-  final Dio _dio = Dio();
-  static String _apiKey = '';
+  PlacesNotifier() : super(PlacesState());
 
-  PlacesNotifier() : super(PlacesState()) {
-    _init();
-  }
+  final Dio _dio = Dio();
+  static final String _apiKey = 'TOKEN';
+
+  // PlacesNotifier() : super(PlacesState()) {
+  //   _init();
+  // }
 
   // TODO test if this implementation wworks correctly
-  Future<void> _init() async {
-    _apiKey = await getApiKey();
-  }
+  // Future<void> _init() async {
+  //   _apiKey = await getApiKey();
+  // }
 
   Future<void> searchPlaces(String query, {double? lat, double? lng}) async {
     if (query.isEmpty) {

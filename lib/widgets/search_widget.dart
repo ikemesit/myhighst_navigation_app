@@ -4,7 +4,6 @@ import '../providers/places_provider.dart';
 import '../providers/location_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../models/place.dart';
-import '../models/navigation_route.dart';
 
 class SearchWidget extends ConsumerStatefulWidget {
   const SearchWidget({super.key});
@@ -30,7 +29,7 @@ class _SearchWidgetState extends ConsumerState<SearchWidget> {
             borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withAlpha(100),
+                color: Colors.black.withOpacity(0.1),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -38,11 +37,22 @@ class _SearchWidgetState extends ConsumerState<SearchWidget> {
           ),
           child: TextField(
             controller: _searchController,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'Search for places...',
-              prefixIcon: Icon(Icons.search),
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() {
+                          _showResults = false;
+                        });
+                      },
+                    )
+                  : null,
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(
+              contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 12,
               ),
@@ -110,16 +120,8 @@ class _SearchWidgetState extends ConsumerState<SearchWidget> {
       _showResults = false;
     });
 
-    final locationState = ref.read(locationProvider);
-    if (locationState.currentPosition != null) {
-      final start = RPosition(
-        locationState.currentPosition!.latitude,
-        locationState.currentPosition!.longitude,
-      );
-      final end = RPosition(place.latitude, place.longitude);
-
-      ref.read(navigationProvider.notifier).getRoute(start, end);
-    }
+    // Set destination for navigation
+    ref.read(navigationProvider.notifier).setDestination(place);
   }
 
   @override

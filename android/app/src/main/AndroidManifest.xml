@@ -3,14 +3,19 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <meta-data 
-        android:name="com.google.android.geo.API_KEY"
-        android:value="${MAPS_API_KEY}"/>
+
+
+    <!--TOKEN-->
 
     <application
         android:label="myhighst_map_app_v2"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${MAPS_API_KEY}"/>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
