@@ -5,8 +5,6 @@
 
 
 
-    <!--TOKEN-->
-
     <application
         android:label="myhighst_map_app_v2"
         android:name="${applicationName}"
